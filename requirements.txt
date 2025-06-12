@@ -1,0 +1,8 @@
+llama-cpp-python[server]==0.3.9
+fastapi>=0.100.0
+python-dotenv>=1.0.0
+uvicorn>=0.22.0
+pydantic-settings>=2.0.1
+sse-starlette>=1.6.1
+starlette-context>=0.3.6
+PyYAML>=5.1
