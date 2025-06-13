@@ -2,8 +2,8 @@ import os
 import sys
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from llama_cpp import Llama
 from llama_cpp.server.app import create_app
+from llama_cpp.server.settings import ModelSettings, ServerSettings
 import uvicorn
 
 def validate_environment():
@@ -31,33 +31,44 @@ def validate_environment():
     
     return model_path, n_ctx, n_threads
 
-def create_llama_instance(model_path: str, n_ctx: int, n_threads: int) -> Llama:
-    """Создает экземпляр Llama с обработкой ошибок"""
+def create_model_settings(model_path: str, n_ctx: int, n_threads: int) -> ModelSettings:
+    """Создает настройки модели с обработкой ошибок"""
     try:
-        llm = Llama(
-            model_path=model_path,
+        # Сначала пробуем с chat_format
+        model_settings = ModelSettings(
+            model=model_path,
             n_ctx=n_ctx,
             n_threads=n_threads,
             n_batch=512,
-            chat_format="chatml",  # закомментируйте при ошибке
-            verbose=False  # отключаем подробный вывод
+            chat_format="chatml",
+            verbose=False
         )
-        return llm
+        print("Настройки модели созданы с chat_format=chatml")
+        return model_settings
     except Exception as e:
-        print(f"Ошибка при создании экземпляра Llama: {e}")
+        print(f"Ошибка при создании настроек с chat_format: {e}")
         # Попробуем без chat_format если возникла ошибка
         try:
-            llm = Llama(
-                model_path=model_path,
+            model_settings = ModelSettings(
+                model=model_path,
                 n_ctx=n_ctx,
                 n_threads=n_threads,
                 n_batch=512,
                 verbose=False
             )
-            print("Модель загружена без chat_format")
-            return llm
+            print("Настройки модели созданы без chat_format")
+            return model_settings
         except Exception as e2:
-            raise RuntimeError(f"Не удалось загрузить модель: {e2}")
+            raise RuntimeError(f"Не удалось создать настройки модели: {e2}")
+
+def create_server_settings() -> ServerSettings:
+    """Создает настройки сервера"""
+    return ServerSettings(
+        host="0.0.0.0",
+        port=12000,
+        interrupt_requests=True,
+        disable_ping_events=False
+    )
 
 def main():
     """Основная функция приложения"""
@@ -67,12 +78,19 @@ def main():
         print(f"Загрузка модели: {model_path}")
         print(f"Параметры: n_ctx={n_ctx}, n_threads={n_threads}")
         
-        # Создание экземпляра Llama
-        llm = create_llama_instance(model_path, n_ctx, n_threads)
-        print("Модель успешно загружена")
+        # Создание настроек модели
+        model_settings = create_model_settings(model_path, n_ctx, n_threads)
+        print("Настройки модели созданы")
+        
+        # Создание настроек сервера
+        server_settings = create_server_settings()
+        print("Настройки сервера созданы")
         
         # Создание FastAPI приложения
-        app: FastAPI = create_app(llm)
+        app: FastAPI = create_app(
+            server_settings=server_settings,
+            model_settings=[model_settings]  # передаем как список
+        )
         print("FastAPI приложение создано")
         
         return app

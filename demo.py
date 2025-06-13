@@ -5,7 +5,7 @@
 
 import os
 import tempfile
-from Main import validate_environment, create_llama_instance
+from Main import validate_environment, create_model_settings
 
 def demo_with_fake_model():
     """Демонстрация работы с фиктивной моделью"""
@@ -38,22 +38,26 @@ def demo_with_fake_model():
             print(f"❌ Ошибка валидации: {e}")
             return
         
-        # Тест создания экземпляра Llama (ожидаем ошибку с фиктивной моделью)
-        print("\n2. Тестирование создания экземпляра Llama...")
+        # Тест создания настроек модели
+        print("\n2. Тестирование создания настроек модели...")
         try:
-            llm = create_llama_instance(model_path, n_ctx, n_threads)
-            print("✅ Экземпляр Llama создан успешно")
+            model_settings = create_model_settings(model_path, n_ctx, n_threads)
+            print("✅ Настройки модели созданы успешно")
+            print(f"   - Модель: {model_settings.model}")
+            print(f"   - Контекст: {model_settings.n_ctx}")
+            print(f"   - Потоки: {model_settings.n_threads}")
         except Exception as e:
-            print(f"⚠️  Ожидаемая ошибка (фиктивная модель): {e}")
-            print("   Это нормально - для работы нужна настоящая модель в формате GGUF")
+            print(f"❌ Ошибка создания настроек: {e}")
         
         print("\n3. Резюме исправлений:")
+        print("✅ Исправлена ошибка с create_app() - теперь используются правильные настройки")
         print("✅ Добавлена проверка существования файла модели")
         print("✅ Добавлена валидация переменных окружения") 
-        print("✅ Добавлена обработка ошибок при загрузке модели")
+        print("✅ Добавлена обработка ошибок при создании настроек")
         print("✅ Добавлен fallback для chat_format")
         print("✅ Улучшена структура кода")
         print("✅ Добавлены информативные сообщения об ошибках")
+        print("✅ Настроены CORS для веб-доступа")
         
         # Восстанавливаем оригинальные переменные окружения
         if original_model_path is not None:
